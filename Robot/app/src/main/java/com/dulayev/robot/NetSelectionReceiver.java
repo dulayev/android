@@ -3,18 +3,22 @@ package com.dulayev.robot;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static android.content.Context.AUDIO_SERVICE;
 
@@ -58,11 +62,14 @@ public class NetSelectionReceiver extends BroadcastReceiver {
                 Log.d(TAG, new Boolean(_silentNetworks.contains(wifiInfo.getSSID())).toString());
                 Log.d(TAG, wifiInfo.getSSID().equals("NAPALM") ? "T" : "F");
 
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                Set<String> muted = prefs.getStringSet("muted", new TreeSet<String>());
+
                 for(int i = 0; i < _silentNetworks.size(); i++) {
                     Log.d(TAG, String.format("list[%d] is %s ---  %d", i, _silentNetworks.get(i), _silentNetworks.get(i).equals(wifiInfo.getSSID().toString()) ? 1 : 0));
                 }
 
-                if(wifiInfo != null && _silentNetworks.contains(wifiInfo.getSSID().replace("\"", ""))) {
+                if(wifiInfo != null && muted.contains(wifiInfo.getSSID()/*.replace("\"", "")*/)) {
 
                     Log.d(TAG, "111 Connected network caused vibrate mode: " + wifiInfo.getSSID() + ";bin=" + _connectedNetwork);
 

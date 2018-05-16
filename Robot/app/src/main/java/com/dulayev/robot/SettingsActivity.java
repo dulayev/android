@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -28,6 +30,8 @@ import java.util.TreeSet;
 public class SettingsActivity extends ListActivity {
 
     SharedPreferences prefs;
+
+    Set<String> muted = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -70,28 +74,50 @@ public class SettingsActivity extends ListActivity {
 
         List<Item> list = new ArrayList<Item>();
 
-        String[] networks = { "N1", "N2", "N3" };
+        List<String> networks = new ArrayList<String>();
+
+        WifiManager wifi_manager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        List<WifiConfiguration> configs = wifi_manager.getConfiguredNetworks();
+
+        if (configs != null) {
+            for (WifiConfiguration config : configs) {
+                networks.add(config.SSID);
+            }
+        }
 
         //list.add(new Item(true, "Flat"));
         //list.add(new Item(false, "Priest"));
 
-        final Set<String> muted = prefs.getStringSet("muted", new TreeSet<String>());
+        muted = prefs.getStringSet("muted", new TreeSet<String>());
 
         for(String network : networks) {
 
         }
 
-        ListAdapter adapter = new ArrayAdapter<String>(this, R.layout.layout, R.id.text1, networks) {
+        final ListAdapter adapter = new ArrayAdapter<String>(this, R.layout.layout, R.id.text1, networks) {
             @NonNull
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
+                final View view = super.getView(position, convertView, parent);
 
                 CheckBox check_box = (CheckBox)view.findViewById(R.id.check1);
 
                 //final Item item = getItem(position);
 
                 check_box.setChecked(muted.contains(getItem(position)));
+
+                check_box.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        TextView text_view = (TextView)view.findViewById(R.id.text1);
+                        if (isChecked) {
+                            muted.add((String)text_view.getText());
+                        } else {
+                            muted.remove((String)text_view.getText());
+                        }
+                        notifyDataSetChanged();
+                    }
+                });
 
                 return view;
             }
@@ -115,5 +141,16 @@ public class SettingsActivity extends ListActivity {
         };
         */
         setListAdapter(adapter);
+    }
+
+    @Override
+    protected void onPause() {
+
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putStringSet("muted", muted);
+        editor.apply();
+
+        super.onPause();
     }
 }
