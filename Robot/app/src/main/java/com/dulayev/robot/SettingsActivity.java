@@ -32,6 +32,9 @@ public class SettingsActivity extends ListActivity {
     SharedPreferences prefs;
 
     Set<String> muted = null;
+
+    ArrayAdapter<String> adapter = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -94,7 +97,7 @@ public class SettingsActivity extends ListActivity {
 
         }
 
-        final ListAdapter adapter = new ArrayAdapter<String>(this, R.layout.layout, R.id.text1, networks) {
+        adapter = new ArrayAdapter<String>(this, R.layout.layout, R.id.text1, networks) {
             @NonNull
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
@@ -152,5 +155,13 @@ public class SettingsActivity extends ListActivity {
         editor.apply();
 
         super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        muted = prefs.getStringSet("muted", new TreeSet<String>());
+        adapter.notifyDataSetChanged();
+
+        super.onResume();
     }
 }

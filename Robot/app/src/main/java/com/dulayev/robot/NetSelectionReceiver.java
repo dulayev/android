@@ -57,16 +57,16 @@ public class NetSelectionReceiver extends BroadcastReceiver {
             if(networkInfo.isConnected()) {
                 WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
 
-                Log.d(TAG, "Connected network: " + wifiInfo.getSSID());
-                Log.d(TAG, new Integer(wifiInfo.getSSID().length()).toString());
-                Log.d(TAG, new Boolean(_silentNetworks.contains(wifiInfo.getSSID())).toString());
-                Log.d(TAG, wifiInfo.getSSID().equals("NAPALM") ? "T" : "F");
-
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
                 Set<String> muted = prefs.getStringSet("muted", new TreeSet<String>());
 
-                for(int i = 0; i < _silentNetworks.size(); i++) {
-                    Log.d(TAG, String.format("list[%d] is %s ---  %d", i, _silentNetworks.get(i), _silentNetworks.get(i).equals(wifiInfo.getSSID().toString()) ? 1 : 0));
+                Log.d(TAG, "Connected network: " + wifiInfo.getSSID());
+                Log.d(TAG, new Integer(wifiInfo.getSSID().length()).toString());
+                Log.d(TAG, new Boolean(muted.contains(wifiInfo.getSSID())).toString());
+                Log.d(TAG, wifiInfo.getSSID().equals("NAPALM") ? "T" : "F");
+
+                for(int i = 0; i < muted.size(); i++) {
+                    Log.d(TAG, String.format("list[%d] is %s ---  %d", i, muted.toArray()[i], muted.toArray()[i].equals(wifiInfo.getSSID().toString()) ? 1 : 0));
                 }
 
                 if(wifiInfo != null && muted.contains(wifiInfo.getSSID()/*.replace("\"", "")*/)) {
