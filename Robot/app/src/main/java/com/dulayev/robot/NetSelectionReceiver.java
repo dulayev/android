@@ -8,14 +8,10 @@ import android.media.AudioManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -35,10 +31,7 @@ import static android.content.Context.AUDIO_SERVICE;
  */
 
 public class NetSelectionReceiver extends BroadcastReceiver {
-    private static final String TAG = NetSelectionReceiver.class.getSimpleName();
 
-    final static private ArrayList<String> _silentNetworks =
-            new ArrayList<>(Arrays.asList("Tango-EMP", "SPB1-GUEST")); //"NAPALM", 
     private String _connectedNetwork; // which caused to enter vibro mode
 
     public NetSelectionReceiver() {
@@ -47,11 +40,11 @@ public class NetSelectionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.e(TAG, "onReceive");
+        Log.e(Utils.TAG, "onReceive");
 
         if(intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
 
-            Log.d(TAG, "NETWORK_STATE_CHANGED_ACTION");
+            Log.d(Utils.TAG, "NETWORK_STATE_CHANGED_ACTION");
 
             NetworkInfo networkInfo = (NetworkInfo)intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             if(networkInfo.isConnected()) {
@@ -60,31 +53,23 @@ public class NetSelectionReceiver extends BroadcastReceiver {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
                 Set<String> muted = prefs.getStringSet("muted", new TreeSet<String>());
 
-                Log.d(TAG, "Connected network: " + wifiInfo.getSSID());
-                Log.d(TAG, new Integer(wifiInfo.getSSID().length()).toString());
-                Log.d(TAG, new Boolean(muted.contains(wifiInfo.getSSID())).toString());
-                Log.d(TAG, wifiInfo.getSSID().equals("NAPALM") ? "T" : "F");
+                Log.d(Utils.TAG, "Connected network: " + wifiInfo.getSSID());
+                Log.d(Utils.TAG, "Muted networks: " + Utils.formatStringSet(muted));
 
-                for(int i = 0; i < muted.size(); i++) {
-                    Log.d(TAG, String.format("list[%d] is %s ---  %d", i, muted.toArray()[i], muted.toArray()[i].equals(wifiInfo.getSSID().toString()) ? 1 : 0));
-                }
-
-                if(wifiInfo != null && muted.contains(wifiInfo.getSSID()/*.replace("\"", "")*/)) {
-
-                    Log.d(TAG, "111 Connected network caused vibrate mode: " + wifiInfo.getSSID() + ";bin=" + _connectedNetwork);
+                if(wifiInfo != null && muted.contains(wifiInfo.getSSID())) {
 
                     _connectedNetwork = intent.getStringExtra(WifiManager.EXTRA_BSSID);
 
                     AudioManager audioManager = (AudioManager) context.getSystemService(AUDIO_SERVICE);
                     audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
 
-                    Log.d(TAG, "Connected network caused vibrate mode: " + wifiInfo.getSSID() + ";bin=" + _connectedNetwork);
+                    Log.d(Utils.TAG, "Connected network caused vibrate mode: " + wifiInfo.getSSID() + ";bin=" + _connectedNetwork);
                 }
             }
             else if(Objects.equals(_connectedNetwork, intent.getStringExtra(WifiManager.EXTRA_BSSID)) &&
                             networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
 
-                Log.d(TAG, "Network disconnected:");
+                Log.d(Utils.TAG, "Network caused silince is disconnected, turn audio on");
 
                 _connectedNetwork = null;
 
@@ -92,10 +77,5 @@ public class NetSelectionReceiver extends BroadcastReceiver {
                 audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
             }
         }
-    }
-
-    @Override
-    public IBinder peekService(Context myContext, Intent service) {
-        return super.peekService(myContext, service);
     }
 }
