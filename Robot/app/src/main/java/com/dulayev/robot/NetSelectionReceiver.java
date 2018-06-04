@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -40,7 +41,30 @@ public class NetSelectionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.e(Utils.TAG, "onReceive");
+        Log.d(Utils.TAG, "onReceive");
+
+        Utils.Log("action", intent.getAction());
+        if (intent.hasExtra(WifiManager.EXTRA_NETWORK_INFO)) {
+            NetworkInfo networkInfo = (NetworkInfo)intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+            Utils.Log("TypeName", networkInfo.getTypeName());
+            Utils.Log("SubtypeName", networkInfo.getSubtypeName());
+            Utils.Log("ExtraInfo", networkInfo.getExtraInfo());
+            Utils.Log("Reason", networkInfo.getReason());
+            Utils.Log("State", networkInfo.getState());
+            Utils.Log("DetailedState", networkInfo.getDetailedState());
+            Utils.Log("Available", networkInfo.isAvailable());
+            Utils.Log("Connected", networkInfo.isConnected());
+            Utils.Log("ConnectedOrConnecting", networkInfo.isConnectedOrConnecting());
+            Utils.Log("Failover", networkInfo.isFailover());
+            Utils.Log("Roaming", networkInfo.isRoaming());
+        }
+
+        if (intent.hasExtra(WifiManager.EXTRA_WIFI_INFO)) {
+            WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
+            Utils.Log("SSID", wifiInfo.getSSID());
+            Utils.Log("BSSID", wifiInfo.getBSSID());
+            Utils.Log("NetworkId", wifiInfo.getNetworkId());
+        }
 
         if(intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
 
