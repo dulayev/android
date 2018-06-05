@@ -41,37 +41,44 @@ public class NetSelectionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(Utils.TAG, "onReceive");
 
-        Utils.Log("action", intent.getAction());
+        StringBuilder sb = new StringBuilder();
+        sb.append(intent.getAction());
+        sb.append('\n');
+
         if (intent.hasExtra(WifiManager.EXTRA_NETWORK_INFO)) {
             NetworkInfo networkInfo = (NetworkInfo)intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-            Utils.Log("TypeName", networkInfo.getTypeName());
-            Utils.Log("SubtypeName", networkInfo.getSubtypeName());
-            Utils.Log("ExtraInfo", networkInfo.getExtraInfo());
-            Utils.Log("Reason", networkInfo.getReason());
-            Utils.Log("State", networkInfo.getState());
-            Utils.Log("DetailedState", networkInfo.getDetailedState());
-            Utils.Log("Available", networkInfo.isAvailable());
-            Utils.Log("Connected", networkInfo.isConnected());
-            Utils.Log("ConnectedOrConnecting", networkInfo.isConnectedOrConnecting());
-            Utils.Log("Failover", networkInfo.isFailover());
-            Utils.Log("Roaming", networkInfo.isRoaming());
+
+            sb.append("type=");
+            sb.append(networkInfo.getTypeName());
+            sb.append(";extra=");
+            sb.append(networkInfo.getExtraInfo());
+            //Utils.Log("Reason", networkInfo.getReason());
+            sb.append(";state=");
+            sb.append(networkInfo.getState());
+            sb.append(":");
+            sb.append(networkInfo.getDetailedState());
+
+            sb.append("\nflags: ");
+
+            if (networkInfo.isAvailable()) sb.append(",Available");
+            if (networkInfo.isConnected()) sb.append(",Connected");
+            if (networkInfo.isConnectedOrConnecting()) sb.append(",ConnectedOrConnecting");
+            if (networkInfo.isFailover()) sb.append(",Failover");
+            if (networkInfo.isRoaming()) sb.append(",Roaming");
         }
 
         if (intent.hasExtra(WifiManager.EXTRA_WIFI_INFO)) {
             WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            Utils.Log("SSID", wifiInfo.getSSID());
-            Utils.Log("BSSID", wifiInfo.getBSSID());
-            Utils.Log("NetworkId", wifiInfo.getNetworkId());
+            sb.append("\nSSID="); sb.append(wifiInfo.getSSID());
+            sb.append(";BSSID="); sb.append(wifiInfo.getBSSID());
         }
+        Utils.Log(sb.toString());
 
         if(intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
 
-            Log.d(Utils.TAG, "NETWORK_STATE_CHANGED_ACTION");
-
             NetworkInfo networkInfo = (NetworkInfo)intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-            if(networkInfo.isConnected()) {
+            if (networkInfo.isConnected()) {
                 WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
 
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -82,23 +89,25 @@ public class NetSelectionReceiver extends BroadcastReceiver {
 
                 if(wifiInfo != null && muted.contains(wifiInfo.getSSID())) {
 
-                    _connectedNetwork = intent.getStringExtra(WifiManager.EXTRA_BSSID);
+                    _connectedNetwork = wifiInfo.getBSSID();
 
                     AudioManager audioManager = (AudioManager) context.getSystemService(AUDIO_SERVICE);
                     audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
 
                     Log.d(Utils.TAG, "Connected network caused vibrate mode: " + wifiInfo.getSSID() + ";bin=" + _connectedNetwork);
                 }
-            }
-            else if(Objects.equals(_connectedNetwork, intent.getStringExtra(WifiManager.EXTRA_BSSID)) &&
-                            networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
+            } else if(networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
 
-                Log.d(Utils.TAG, "Network caused silince is disconnected, turn audio on");
+                Utils.Log("Disconnected: storedNetwork is:", _connectedNetwork);
+                if (Objects.equals(_connectedNetwork, intent.getStringExtra(WifiManager.EXTRA_BSSID))) {
 
-                _connectedNetwork = null;
+                    Log.d(Utils.TAG, "Network caused silence is disconnected, turn audio on");
 
-                AudioManager audioManager = (AudioManager) context.getSystemService(AUDIO_SERVICE);
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                    _connectedNetwork = null;
+
+                    AudioManager audioManager = (AudioManager) context.getSystemService(AUDIO_SERVICE);
+                    audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                }
             }
         }
     }
