@@ -27,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     final String TAG = "DashCam";
     private CameraDevice camera;
     private MediaRecorder recorder;
+    private Surface surface;
+    private CaptureRequest.Builder builder;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -83,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         this.camera = camera;
         try {
             this.recorder = new MediaRecorder();
-            recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+            recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             File picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
@@ -95,13 +97,18 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            recorder.start();
-            Surface surface = recorder.getSurface();
+            //recorder.start();
+            this.surface = recorder.getSurface();
+
+            this.builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            builder.addTarget(surface);
+
 
             camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     Log.d(TAG, "onConfigured");
+                    OnCaptureSessionConfigured(session);
                 }
 
                 @Override
@@ -110,10 +117,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, null);
 
-            CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            builder.addTarget(surface);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    private void OnCaptureSessionConfigured(CameraCaptureSession session) {
+
     }
 }
