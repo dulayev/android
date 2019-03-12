@@ -1,20 +1,32 @@
 package com.dulayev.dashcam;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
+import android.view.Surface;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
     final String TAG = "DashCam";
+    private CameraDevice camera;
+    private MediaRecorder recorder;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -46,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onOpened(@androidx.annotation.NonNull CameraDevice camera) {
                     Log.d(TAG, "onOpened");
+                        OnCameraOpened(camera);
                 }
 
                 @Override
@@ -63,6 +76,44 @@ public class MainActivity extends AppCompatActivity {
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void OnCameraOpened(CameraDevice camera) {
+        this.camera = camera;
+        try {
+            this.recorder = new MediaRecorder();
+            recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            File picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+            recorder.setOutputFile(picturesDir.getPath() + "/dc.mp4");
+            recorder.setVideoSize(1920, 1080);
+            recorder.setVideoFrameRate(30);
+            try {
+                recorder.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            recorder.start();
+            Surface surface = recorder.getSurface();
+
+            camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession session) {
+                    Log.d(TAG, "onConfigured");
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                    Log.d(TAG, "onConfigureFailed");
+                }
+            }, null);
+
+            CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            builder.addTarget(surface);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
     }
 }
