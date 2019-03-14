@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private MediaRecorder recorder;
     private Surface surface;
     private CaptureRequest.Builder builder;
+    private CameraCaptureSession session;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -123,6 +124,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void OnCaptureSessionConfigured(CameraCaptureSession session) {
-
+        this.session = session;
+        try {
+            session.setRepeatingRequest(builder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                    super.onCaptureStarted(session, request, timestamp, frameNumber);
+                }
+            }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        recorder.start();
     }
 }
