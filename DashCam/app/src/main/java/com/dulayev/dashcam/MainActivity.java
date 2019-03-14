@@ -15,12 +15,15 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Surface;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private Surface surface;
     private CaptureRequest.Builder builder;
     private CameraCaptureSession session;
+    private Timer timer;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -125,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void OnCaptureSessionConfigured(CameraCaptureSession session) {
         this.session = session;
+        recorder.start();
         try {
             session.setRepeatingRequest(builder.build(), new CameraCaptureSession.CaptureCallback() {
                 @Override
@@ -135,6 +140,27 @@ public class MainActivity extends AppCompatActivity {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        recorder.start();
+        this.timer = new Timer();
+        final Handler handler = new Handler();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        OnTimerEnd();
+                    }
+                });
+            }
+        }, 6000/*ms*/);
+    }
+
+    private void OnTimerEnd() {
+        try {
+            this.session.stopRepeating();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        recorder.stop();
     }
 }
