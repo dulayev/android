@@ -1,5 +1,8 @@
 package com.dulayev.dashcam;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.camera2.CameraAccessException;
@@ -27,6 +30,7 @@ import androidx.annotation.Nullable;
 
 public class RecorderService extends Service {
 
+    private static final int NOTIFICATION_ID = R.string.notification_text;
     final String TAG = getClass().getSimpleName();
     private CameraDevice camera;
     private MediaRecorder recorder;
@@ -44,6 +48,26 @@ public class RecorderService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.d(TAG, "onStart");
+
+        //Notification notification = new Notification(R.drawable.ic_media_stop, getText(R.string.notification_text),
+        //        System.currentTimeMillis());
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setSmallIcon(R.drawable.ic_media_stop)
+            .setContentTitle(getString(R.string.notification_text))
+            .setContentIntent(pendingIntent);
+
+        Notification notification = builder.getNotification();
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+
+        notificationManager.notify(R.drawable.ic_media_stop, notification);
+
+        //notification.setLatestEventInfo(this, getText(R.string.notification_title),
+        //        getText(R.string.notification_message), pendingIntent);
+        startForeground(NOTIFICATION_ID, notification);
 
         CameraManager cameraManager = getSystemService(CameraManager.class);
         String cameraId = null;
