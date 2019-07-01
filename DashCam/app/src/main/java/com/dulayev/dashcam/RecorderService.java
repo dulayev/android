@@ -1,5 +1,6 @@
 package com.dulayev.dashcam;
 
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,6 +14,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -27,8 +29,12 @@ import java.util.TimerTask;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
-public class RecorderService extends Service {
+import static android.app.PendingIntent.FLAG_NO_CREATE;
+import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
+
+public class RecorderService extends IntentService {
 
     private static final int NOTIFICATION_ID = R.string.notification_text;
     final String TAG = getClass().getSimpleName();
@@ -37,13 +43,25 @@ public class RecorderService extends Service {
     private Surface surface;
     private CaptureRequest.Builder builder;
     private CameraCaptureSession session;
-    private Timer timer;
+
+    /**
+     * Creates an IntentService.  Invoked by your subclass's constructor.
+     *
+     * @param name Used to name the worker thread, important only for debugging.
+     */
+    public RecorderService(String name) {
+        super(name);
+    }
+    public RecorderService() {
+        super("default-service-name");
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -51,8 +69,10 @@ public class RecorderService extends Service {
 
         //Notification notification = new Notification(R.drawable.ic_media_stop, getText(R.string.notification_text),
         //        System.currentTimeMillis());
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        Intent notificationIntent = new Intent(this, this.getClass());
+        notificationIntent.addFlags(FLAG_ACTIVITY_SINGLE_TOP);
+        //PendingIntent.
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
 
         Notification.Builder builder = new Notification.Builder(this);
         builder.setSmallIcon(R.drawable.ic_media_stop)
@@ -61,9 +81,9 @@ public class RecorderService extends Service {
 
         Notification notification = builder.getNotification();
 
-        NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+//        NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
-        notificationManager.notify(R.drawable.ic_media_stop, notification);
+//        notificationManager.notify(R.drawable.ic_media_stop, notification);
 
         //notification.setLatestEventInfo(this, getText(R.string.notification_title),
         //        getText(R.string.notification_message), pendingIntent);
@@ -170,30 +190,23 @@ public class RecorderService extends Service {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        this.timer = new Timer();
-        final Handler handler = new Handler();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        OnTimerEnd();
-                    }
-                });
-            }
-        }, 6000/*ms*/);
     }
 
-    private void OnTimerEnd() {
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+
+        Log.d(TAG, "onHandleIntent");
+
         try {
             this.session.stopRepeating();
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
         recorder.stop();
-    }
 
+        this.stopForeground(true);
+        this.stopSelf();
+    }
 
     @Nullable
     @Override
